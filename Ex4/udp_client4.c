@@ -4,7 +4,7 @@ tcp_client.c: the source file of the client in tcp transmission
 
 #include "headsock.h"
 
-float str_cli(FILE *fp, int sockfd, long *len);                       //transmission function
+float str_cli4(FILE *fp, int sockfd, struct sockaddr *addr, int addrlen, long *len);   //transmission function
 void tv_sub(struct  timeval *out, struct timeval *in);	    //calcu the time interval between out and in
 
 int main(int argc, char **argv)
@@ -61,13 +61,6 @@ int main(int argc, char **argv)
 		exit(0);
 	}
 
-
-
-	str_cli1(stdin, sockfd, (struct sockaddr *)&ser_addr, sizeof(struct sockaddr_in), &len);   // receive and send
-
-
-
-
 	ti = str_cli4(fp, sockfd, (struct sockattr *)&ser_addr, sizeof(struct sockaddr_in), &len);                       //perform the transmission and receiving
 	rt = (len/(float)ti);                                         //caculate the average transmission rate
 	printf("Time(ms) : %.3f, Data sent(byte): %d\nData rate: %f (Kbytes/s)\n", ti, (int)len, rt);
@@ -76,20 +69,6 @@ int main(int argc, char **argv)
 	fclose(fp);
 
 	exit(0);
-}
-
-
-void str_cli1(FILE *fp, int sockfd, struct sockaddr *addr, int addrlen, int *len)
-{
-	char sends[MAXSIZE];
-
-	printf("Please input a string (less than 50 characters):\n");
-	if (fgets(sends, MAXSIZE, fp) == NULL) {
-		printf("error input\n");
-	}
-
-	sendto(sockfd, &sends, strlen(sends), 0, addr, addrlen);                         //send the packet to server
-	printf("send out!!\n");
 }
 
 
@@ -150,7 +129,6 @@ float str_cli4(FILE *fp, int sockfd, struct sockaddr *addr, int addrlen, long *l
 			ci += slen;
 		}
 	}
-	
 	gettimeofday(&recvt, NULL);
 	*len= ci;                                                         //get current time
 	tv_sub(&recvt, &sendt);                                                                 // get the whole trans time

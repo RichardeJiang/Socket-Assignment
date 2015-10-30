@@ -9,7 +9,7 @@ tcp_ser.c: the source file of the server in tcp transmission
 
 #define ERRORRATE 20
 
-void str_ser(int sockfd);                                                        // transmitting and receiving function
+void str_ser4(int sockfd);                                                        // transmitting and receiving function
 
 int main(void)
 {
