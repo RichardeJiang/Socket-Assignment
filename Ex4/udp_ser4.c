@@ -7,7 +7,6 @@ tcp_ser.c: the source file of the server in tcp transmission
 
 #define BACKLOG 10
 
-#define ERRORRATE 20
 
 void str_ser4(int sockfd);                                                        // transmitting and receiving function
 
@@ -25,7 +24,7 @@ int main(void)
 
 	my_addr.sin_family = AF_INET;
 	my_addr.sin_port = htons(MYUDP_PORT);
-	my_addr.sin_addr.s_addr = INADDR_ANY;
+	my_addr.sin_addr.s_addr = INADDR_ANY;  //INADDR_ANY means the server accpets all conections.
 	bzero(&(my_addr.sin_zero), 8);  //initialize the buffer
 	if (bind(sockfd, (struct sockaddr *) &my_addr, sizeof(struct sockaddr)) == -1) {           //bind socket
 		printf("error in binding");
@@ -47,6 +46,7 @@ void str_ser4(int sockfd)
 	char recvs[DATALEN];
 	struct ack_so ack;
 	int end, n = 0;
+	int ERRORRATE = 20;
 	int len;
 	int ran = 0;
 	long lseek = 0;
@@ -65,13 +65,14 @@ void str_ser4(int sockfd)
 			exit(1);
 		}
 		ran = rand()%100;
+		memcpy((buf+lseek), recvs, n);
 		if(ran>=ERRORRATE) {
+			printf("%d\n",ran);
 			if(recvs[n-1] == '\0') {     //at the end of the file
 				end = 1;
 				n--;
 			}
-
-			memcpy((buf+lseek), recvs, n);
+			
 			lseek += n;
 			
 			ack.num = 1;
@@ -85,10 +86,13 @@ void str_ser4(int sockfd)
 		if((n=sendto(sockfd, &ack, 2, 0, (struct sockaddr *)&addr, len)) == -1) {
 			printf("error sending ack!\n");
 			exit(1);
+		}
+		else {
+			printf("sent ACK and num is%d\n", ack.num);
 		}	
 		
 	}
-	if ((fp = fopen ("myTCPreceive.txt","wt")) == NULL)
+	if ((fp = fopen ("myUDPreceive.txt","wt")) == NULL)
 	{
 		printf("File doesn't exit\n");
 		exit(0);

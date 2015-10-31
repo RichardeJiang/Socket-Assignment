@@ -4,7 +4,7 @@ tcp_client.c: the source file of the client in tcp transmission
 
 #include "headsock.h"
 
-float str_cli4(FILE *fp, int sockfd, struct sockaddr *addr, int addrlen, long *len);   //transmission function
+float str_cli4(FILE *fp, int sockfd, struct sockaddr *addr, int addrlen, long *len, int *numberOfErrors);   //transmission function
 void tv_sub(struct  timeval *out, struct timeval *in);	    //calcu the time interval between out and in
 
 int main(int argc, char **argv)
@@ -16,6 +16,7 @@ int main(int argc, char **argv)
 	char **pptr;
 	struct hostent *sh;
 	struct in_addr **addrs;
+	int numOfErrors = 0;
 	FILE *fp;
 
 	if (argc!= 2)
@@ -61,9 +62,10 @@ int main(int argc, char **argv)
 		exit(0);
 	}
 
-	ti = str_cli4(fp, sockfd, (struct sockattr *)&ser_addr, sizeof(struct sockaddr_in), &len);                       //perform the transmission and receiving
+	ti = str_cli4(fp, sockfd, (struct sockaddr *)&ser_addr, sizeof(struct sockaddr_in), &len, &numOfErrors);                       //perform the transmission and receiving
 	rt = (len/(float)ti);                                         //caculate the average transmission rate
 	printf("Time(ms) : %.3f, Data sent(byte): %d\nData rate: %f (Kbytes/s)\n", ti, (int)len, rt);
+	printf("%d errors occurred during transmission.\n",numOfErrors);
 
 	close(sockfd);
 	fclose(fp);
@@ -72,7 +74,7 @@ int main(int argc, char **argv)
 }
 
 
-float str_cli4(FILE *fp, int sockfd, struct sockaddr *addr, int addrlen, long *len)
+float str_cli4(FILE *fp, int sockfd, struct sockaddr *addr, int addrlen, long *len, int *numberOfErrors)
 {
 	char *buf;
 	long lsize, ci;
@@ -81,12 +83,9 @@ float str_cli4(FILE *fp, int sockfd, struct sockaddr *addr, int addrlen, long *l
 	int n, slen;
 	float time_inv = 0.0;
 	struct timeval sendt, recvt;
-	int start = 0;
+	struct sockaddr_in temp_addr;  //Notice that here temp_addr and temp_len need to be used for recvfrom
+	int temp_len = sizeof(struct sockaddr_in);
 	ci = 0;    //ci: current index
-	int prev_ack;
-
-	ack.num = 0;
-	ack.len = 0;
 
 	fseek (fp , 0 , SEEK_END);
 	lsize = ftell (fp);
@@ -112,18 +111,22 @@ float str_cli4(FILE *fp, int sockfd, struct sockaddr *addr, int addrlen, long *l
 			slen = DATALEN;
 		memcpy(sends, (buf+ci), slen);
 		n = sendto(sockfd, &sends, slen, 0, addr, addrlen);
+		
 		if(n == -1) {
-			printf("send error!");								//send the data
+			printf("%ld\n",ci);
+			printf("send error!\n");								//send the data
 			exit(1);
 		}
+		
 
-		if ((n= recv(sockfd, &ack, 2, 0))==-1)                                   //receive the ack
+		if ((n= recvfrom(sockfd, &ack, 2, 0, (struct sockaddr *)&temp_addr, &temp_len))==-1)                                   //receive the ack
 		{
 			printf("error when receiving\n");
 			exit(1);
 		}
-		if (ack.num != 1|| ack.len != 0) {
+		else if (ack.num != 1|| ack.len != 0) {
 			printf("error in transmission\n");
+			(*numberOfErrors)++;
 		}
 		else {
 			ci += slen;
