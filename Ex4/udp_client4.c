@@ -1,5 +1,5 @@
 /*******************************
-tcp_client.c: the source file of the client in tcp transmission 
+udp_client4.c: the source file of the client in udp transmission 
 ********************************/
 
 #include "headsock.h"

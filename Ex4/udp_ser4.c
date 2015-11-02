@@ -1,5 +1,5 @@
 /**********************************
-tcp_ser.c: the source file of the server in tcp transmission 
+udp_ser4.c: the source file of the server in udp transmission 
 ***********************************/
 
 
